@@ -1,0 +1,18 @@
+---
+a: b
+c:
+  d: e
+  f: 2
+  g:
+    - h: i
+      j: k
+    - l: m
+    - h: i
+      j: k
+    - j: k
+l: b
+m:
+  - h: i
+    j: k
+n: 2
+o: "2"
