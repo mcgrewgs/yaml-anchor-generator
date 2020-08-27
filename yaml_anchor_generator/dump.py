@@ -1,82 +1,56 @@
-from typing import Dict, Union, List, Any, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Union
+from yaml import full_load as parse
 import re
 
 INDENT_INC = 2
 
-YAMLValue = Union[int, bool, str, "YAMLMap", "YAMLList", List[Any], Dict[str, Any]]
+YAMLValue = Union[int, bool, str, List[Any], Dict[str, Any]]
 
 
 def val_to_label_key(v: YAMLValue) -> str:
     return str(type(v)) + " " + str(v)
 
 
-class YAMLMap:
-    indent: int
-    labels: Dict[str, Tuple[str, int]]
-    key_vals: Dict[str, YAMLValue]
-
-    def __init__(
-        self: "YAMLMap",
-        indent_num: int = 0,
-        l: Dict[str, Tuple[str, int]] = {},
-        kv: Dict[str, YAMLValue] = {},
-    ):
-        self.indent = indent_num
-        self.key_vals = kv
-        self.labels = l
-
-    def yaml_map_to_string(self: "YAMLMap") -> str:
-        str_builder = "\n"
-        for k, v in self.key_vals.items():
-            lk = val_to_label_key(v)
-            print(f"{v}: {lk}")
-            if lk in self.labels:
-                self.labels[lk] = (self.labels[lk][0], self.labels[lk][1] + 1)
-                str_builder += (" " * self.indent) + f"{k}: *{self.labels[lk][0]}\n"
-            else:
-                self.labels[lk] = (f"label{len(self.labels)}", 0)
-                str_builder += (
-                    (" " * self.indent)
-                    + f"{k}: &{self.labels[lk][0]} {parent_to_string(v, self.labels, self.indent + INDENT_INC).rstrip()}\n"
-                )
-
-        return str_builder
+def label_name(i: int) -> str:
+    return f"label{i:04}"
 
 
-class YAMLList:
-    indent: int
-    labels: Dict[str, Tuple[str, int]]
-    vals: List[YAMLValue]
+def yaml_map_to_string(
+    key_vals: Dict[str, YAMLValue], labels: Dict[str, Tuple[str, int]], indent: int
+) -> str:
+    str_builder = "\n"
+    for k, v in key_vals.items():
+        lk = val_to_label_key(v)
+        if lk in labels:
+            labels[lk] = (labels[lk][0], labels[lk][1] + 1)
+            str_builder += (" " * indent) + f"{k}: *{labels[lk][0]}\n"
+        else:
+            labels[lk] = (label_name(len(labels)), 0)
+            str_builder += (
+                (" " * indent)
+                + f"{k}: &{labels[lk][0]} {parent_to_string(v, labels, indent + INDENT_INC).rstrip()}\n"
+            )
 
-    def __init__(
-        self: "YAMLList",
-        indent_num: int = 0,
-        l: Dict[str, Tuple[str, int]] = {},
-        v: List[YAMLValue] = [],
-    ):
-        self.indent = indent_num
-        self.vals = v
-        self.labels = l
-
-    def yaml_list_to_string(self: "YAMLList") -> str:
-        str_builder = "\n"
-        for v in self.vals:
-            lk = val_to_label_key(v)
-            print(f"{v}: {lk}")
-            if lk in self.labels:
-                self.labels[lk] = (self.labels[lk][0], self.labels[lk][1] + 1)
-                str_builder += (" " * self.indent) + f"- *{self.labels[lk][0]}\n"
-            else:
-                self.labels[lk] = (f"label{len(self.labels)}", 0)
-                str_builder += (
-                    (" " * self.indent)
-                    + f"- &{self.labels[lk][0]} {parent_to_string(v, self.labels, self.indent + INDENT_INC).rstrip()}\n"
-                )
-
-        return str_builder
+    return str_builder
 
 
-sample = YAMLMap(0, {}, {"a": "b", "c": 2, "d": 2, "e": "b", "f": 0, "g": [2]})
+def yaml_list_to_string(
+    vals: List[YAMLValue], labels: Dict[str, Tuple[str, int]], indent: int
+) -> str:
+    str_builder = "\n"
+    for v in vals:
+        lk = val_to_label_key(v)
+        if lk in labels:
+            labels[lk] = (labels[lk][0], labels[lk][1] + 1)
+            str_builder += (" " * indent) + f"- *{labels[lk][0]}\n"
+        else:
+            labels[lk] = (label_name(len(labels)), 0)
+            str_builder += (
+                (" " * indent)
+                + f"- &{labels[lk][0]} {parent_to_string(v, labels, indent + INDENT_INC).rstrip()}\n"
+            )
+
+    return str_builder
 
 
 def parent_to_string(
@@ -87,22 +61,24 @@ def parent_to_string(
     elif isinstance(input, int) or isinstance(input, bool):
         return f"{input}"
     elif isinstance(input, List):
-        return parent_to_string(YAMLList(indent, l, input), l, indent)
+        return yaml_list_to_string(input, l, indent)
     elif isinstance(input, Dict):
-        return parent_to_string(YAMLMap(indent, l, input), l, indent)
-    elif isinstance(input, YAMLMap):
-        return input.yaml_map_to_string()
-    elif isinstance(input, YAMLList):
-        return input.yaml_list_to_string()
+        return yaml_map_to_string(input, l, indent)
     else:
         return ""
 
 
 def scrub_unused_labels(str_builder: str, l: Dict[str, Tuple[str, int]]) -> str:
+    i = 0
     for _, v in l.items():
         if v[1] == 0:
             str_builder = str_builder.replace(f"&{v[0]} ", "")
+        else:
+            str_builder = str_builder.replace(f"&{v[0]}", f"&{label_name(i)}")
+            str_builder = str_builder.replace(f"*{v[0]}", f"*{label_name(i)}")
+            i += 1
     str_builder = re.sub("-\\s*\n\\s*", "- ", str_builder)
+    str_builder = re.sub(" +\\n", "\\n", str_builder)
     return str_builder
 
 
