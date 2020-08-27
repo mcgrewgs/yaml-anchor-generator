@@ -57,7 +57,10 @@ def parent_to_string(
     input: YAMLValue, l: Dict[str, Tuple[str, int]] = {}, indent: int = 0
 ) -> str:
     if isinstance(input, str):
-        return f'"{input}"'
+        if "\n" in input:
+            return "| \n" + " " * indent + input.replace("\n", "\n" + " " * indent)
+        else:
+            return f'"{input}"'
     elif isinstance(input, int) or isinstance(input, bool):
         return f"{input}"
     elif isinstance(input, List):

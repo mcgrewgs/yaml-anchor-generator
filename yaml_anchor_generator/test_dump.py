@@ -13,6 +13,10 @@ c:
     - h: i
       j: k
     - j: k
+    - p: |
+        q
+        r
+        s
 l: b
 m:
   - h: i
@@ -32,6 +36,10 @@ c:
     - l: "m"
     - *label0002
     - j: *label0003
+    - p: |
+        q
+        r
+        s
 l: *label0000
 m:
   - *label0002
