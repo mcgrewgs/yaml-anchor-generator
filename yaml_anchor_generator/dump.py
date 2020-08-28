@@ -24,10 +24,14 @@ def dict_contains(parent: Dict[Any, Any], child: Dict[Any, Any]) -> bool:
     return True
 
 
+def same_type(a: Any, b: Any) -> bool:
+    return type(a) == type(b)
+
+
 def count_overlap(parent: Dict[Any, Any], child: Dict[Any, Any]) -> int:
     overlap = 0
     for k in child:
-        if parent[k] == child[k]:
+        if same_type(parent[k], child[k]) and parent[k] == child[k]:
             overlap += 1
 
     return overlap
@@ -82,7 +86,7 @@ def yaml_map_to_string(
                     )
         else:
             for i in range(len(labels)):
-                if labels[i][0] == v:
+                if same_type(labels[i][0], v) and labels[i][0] == v:
                     is_labeled = True
                     labels[i] = (labels[i][0], labels[i][1], labels[i][2] + 1)
                     str_builder += (" " * indent) + f"{k}: *{labels[i][1]}\n"
@@ -143,7 +147,7 @@ def yaml_list_to_string(
                     )
         else:
             for i in range(len(labels)):
-                if labels[i][0] == v:
+                if same_type(labels[i][0], v) and labels[i][0] == v:
                     labels[i] = (labels[i][0], labels[i][1], labels[i][2] + 1)
                     str_builder += (" " * indent) + f"- *{labels[i][1]}\n"
                     is_labeled = True
@@ -164,8 +168,13 @@ def parent_to_string(
     if isinstance(input, str):
         if "\n" in input:
             return "| \n" + " " * indent + input.replace("\n", "\n" + " " * indent)
-        else:
+        elif '"' not in input:
             return f'"{input}"'
+        elif "'" not in input:
+            return f"'{input}'"
+        else:
+            s = input.replace('"', r"\"")
+            return f'"{s}"'
     elif isinstance(input, int) or isinstance(input, bool):
         return f"{input}"
     elif isinstance(input, List):
