@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Tuple, Union
 from yaml import full_load as parse
 import re
+import sys
 
 INDENT_INC = 2
 
@@ -146,3 +147,13 @@ def dumps(input: YAMLValue) -> str:
     l = []
     s = parent_to_string(input, l, 0)
     return scrub_unused_labels(s, l)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        c = {}
+        with open(sys.argv[1], "r") as f:
+            c = parse(f.read())
+        print(dumps(c).lstrip())
+    else:
+        print("Please provide a filename as an argument!")
