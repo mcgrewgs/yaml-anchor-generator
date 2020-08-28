@@ -99,12 +99,48 @@ def yaml_list_to_string(
     str_builder = "\n"
     for v in vals:
         is_labeled = False
-        for i in range(len(labels)):
-            if labels[i][0] == v:
-                labels[i] = (labels[i][0], labels[i][1], labels[i][2] + 1)
-                str_builder += (" " * indent) + f"- *{labels[i][1]}\n"
-                is_labeled = True
-                break
+        is_labeled = False
+        if isinstance(v, Dict):
+            max_overlap = 0
+            best_label_index = -1
+            for i in range(len(labels)):
+                if isinstance(labels[i][0], Dict) and dict_contains(v, labels[i][0]):
+                    c = count_overlap(v, labels[i][0])
+                    if c > max_overlap:
+                        max_overlap = c
+                        best_label_index = i
+                        is_labeled = True
+            if is_labeled:
+                labels[best_label_index] = (
+                    labels[best_label_index][0],
+                    labels[best_label_index][1],
+                    labels[best_label_index][2] + 1,
+                )
+                if max_overlap == len(v):
+                    str_builder += (
+                        " " * indent
+                    ) + f"- *{labels[best_label_index][1]}\n"
+                else:
+                    str_builder += (
+                        " " * indent
+                    ) + f"- <<: *{labels[best_label_index][1]}"
+                    new_kv = {}
+                    for kk, vv in v.items():
+                        if (
+                            kk not in labels[best_label_index][0]
+                            or labels[best_label_index][0][kk] != vv
+                        ):
+                            new_kv[kk] = vv
+                    str_builder += yaml_map_to_string(
+                        new_kv, labels, indent + INDENT_INC
+                    )
+        else:
+            for i in range(len(labels)):
+                if labels[i][0] == v:
+                    labels[i] = (labels[i][0], labels[i][1], labels[i][2] + 1)
+                    str_builder += (" " * indent) + f"- *{labels[i][1]}\n"
+                    is_labeled = True
+                    break
         if not is_labeled:
             labels.append((v, label_name(len(labels)), 0))
             str_builder += (

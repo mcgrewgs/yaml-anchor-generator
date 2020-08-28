@@ -21,6 +21,7 @@ l: b
 m:
   - h: i
     j: k
+    d: 7
 n: 2
 o: "2"
 p:
@@ -47,7 +48,8 @@ c: &label0001
         s
 l: *label0000
 m:
-  - *label0003
+  - <<: *label0003
+    d: 7
 n: *label0002
 o: "2"
 p:
