@@ -23,28 +23,37 @@ m:
     j: k
 n: 2
 o: "2"
+p:
+  d: e
+  f: 2
+  g: 3
+  h: 5
 """
 sample_output_raw = """
 a: &label0000 "b"
-c:
+c: &label0001
   d: "e"
-  f: &label0001 2
+  f: &label0002 2
   g:
-    - &label0002
+    - &label0003
       h: "i"
-      j: &label0003 "k"
+      j: &label0004 "k"
     - l: "m"
-    - *label0002
-    - j: *label0003
+    - *label0003
+    - j: *label0004
     - p: |
         q
         r
         s
 l: *label0000
 m:
-  - *label0002
-n: *label0001
+  - *label0003
+n: *label0002
 o: "2"
+p:
+  <<: *label0001
+  g: 3
+  h: 5
 """
 
 

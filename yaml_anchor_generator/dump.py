@@ -60,11 +60,14 @@ def yaml_map_to_string(
                     (" " * indent)
                     + f"{k}: \n"
                     + (" " * (indent + INDENT_INC))
-                    + f"<<: *{labels[best_label_index][1]}\n"
+                    + f"<<: *{labels[best_label_index][1]}"
                 )
                 new_kv = {}
                 for kk, vv in v.items():
-                    if labels[best_label_index][0][kk] != vv:
+                    if (
+                        kk not in labels[best_label_index][0]
+                        or labels[best_label_index][0][kk] != vv
+                    ):
                         new_kv[kk] = vv
                 str_builder += yaml_map_to_string(new_kv, labels, indent + INDENT_INC)
         else:
