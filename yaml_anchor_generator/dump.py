@@ -38,6 +38,8 @@ def yaml_map_to_string(
     labels: List[Tuple[YAMLValue, str, int]],
     indent: int,
 ) -> str:
+    if len(key_vals) == 0:
+        return "{}"
     str_builder = "\n"
     for k, v in key_vals.items():
         is_labeled = False
@@ -92,6 +94,8 @@ def yaml_map_to_string(
 def yaml_list_to_string(
     vals: List[YAMLValue], labels: List[Tuple[YAMLValue, str, int]], indent: int
 ) -> str:
+    if len(vals) == 0:
+        return "[]"
     str_builder = "\n"
     for v in vals:
         is_labeled = False
