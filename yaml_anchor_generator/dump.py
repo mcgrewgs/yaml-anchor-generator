@@ -59,20 +59,27 @@ def yaml_map_to_string(
                     labels[best_label_index][1],
                     labels[best_label_index][2] + 1,
                 )
-                str_builder += (
-                    (" " * indent)
-                    + f"{k}: \n"
-                    + (" " * (indent + INDENT_INC))
-                    + f"<<: *{labels[best_label_index][1]}"
-                )
-                new_kv = {}
-                for kk, vv in v.items():
-                    if (
-                        kk not in labels[best_label_index][0]
-                        or labels[best_label_index][0][kk] != vv
-                    ):
-                        new_kv[kk] = vv
-                str_builder += yaml_map_to_string(new_kv, labels, indent + INDENT_INC)
+                if max_overlap == len(v):
+                    str_builder += (
+                        " " * indent
+                    ) + f"{k}: *{labels[best_label_index][1]}\n"
+                else:
+                    str_builder += (
+                        (" " * indent)
+                        + f"{k}: \n"
+                        + (" " * (indent + INDENT_INC))
+                        + f"<<: *{labels[best_label_index][1]}"
+                    )
+                    new_kv = {}
+                    for kk, vv in v.items():
+                        if (
+                            kk not in labels[best_label_index][0]
+                            or labels[best_label_index][0][kk] != vv
+                        ):
+                            new_kv[kk] = vv
+                    str_builder += yaml_map_to_string(
+                        new_kv, labels, indent + INDENT_INC
+                    )
         else:
             for i in range(len(labels)):
                 if labels[i][0] == v:
@@ -131,12 +138,9 @@ def yaml_list_to_string(
                             or labels[best_label_index][0][kk] != vv
                         ):
                             new_kv[kk] = vv
-                    if len(new_kv) == 0:
-                        str_builder += "\n"
-                    else:
-                        str_builder += yaml_map_to_string(
-                            new_kv, labels, indent + INDENT_INC
-                        )
+                    str_builder += yaml_map_to_string(
+                        new_kv, labels, indent + INDENT_INC
+                    )
         else:
             for i in range(len(labels)):
                 if labels[i][0] == v:
