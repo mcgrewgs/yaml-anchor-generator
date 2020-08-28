@@ -131,9 +131,12 @@ def yaml_list_to_string(
                             or labels[best_label_index][0][kk] != vv
                         ):
                             new_kv[kk] = vv
-                    str_builder += yaml_map_to_string(
-                        new_kv, labels, indent + INDENT_INC
-                    )
+                    if len(new_kv) == 0:
+                        str_builder += "\n"
+                    else:
+                        str_builder += yaml_map_to_string(
+                            new_kv, labels, indent + INDENT_INC
+                        )
         else:
             for i in range(len(labels)):
                 if labels[i][0] == v:
