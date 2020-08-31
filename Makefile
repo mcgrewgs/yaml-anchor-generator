@@ -15,6 +15,10 @@ setup:
 update: setup
 	if [[ "$(new_hash)" != "$(old_hash)" ]]; then PIPENV_VENV_IN_PROJECT=$(PIPENV_VENV_IN_PROJECT) pipenv update --dev; echo "$(new_hash)" > pipfile_hash; fi
 
+.PHONY: run
+run: update
+	./run.sh
+
 .PHONY: lint
 lint: update
 	pipenv run autoflake -i -r --imports $(PROJECT_NAME) $(PROJECT_NAME)

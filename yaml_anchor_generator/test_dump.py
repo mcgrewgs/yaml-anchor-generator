@@ -31,29 +31,29 @@ p:
   h: 5
 """
 sample_output_raw = """
-a: &label0000 "b"
-c: &label0001
+a: &label_a "b"
+c: &label_c
   d: "e"
-  f: &label0002 2
+  f: &label_c_f 2
   g:
-    - &label0003
+    - &label_c_g_0
       h: "i"
-      j: &label0004 "k"
+      j: &label_c_g_0_j "k"
     - l: "m"
-    - *label0003
-    - j: *label0004
+    - *label_c_g_0
+    - j: *label_c_g_0_j
     - p: |
         q
         r
         s
-l: *label0000
+l: *label_a
 m:
-  - <<: *label0003
+  - <<: *label_c_g_0
     d: 7
-n: *label0002
+n: *label_c_f
 o: "2"
 p:
-  <<: *label0001
+  <<: *label_c
   g: 3
   h: 5
 """
