@@ -9,7 +9,8 @@ YAMLValue = Union[int, bool, str, List[Any], Dict[str, Any]]
 
 
 def label_name(partial_key: str) -> str:
-    return f"label{partial_key}"
+    k = re.sub("[^a-zA-Z0-9]+", "_", partial_key)
+    return f"label{k}"
 
 
 def dict_contains(parent: Dict[Any, Any], child: Dict[Any, Any]) -> bool:
