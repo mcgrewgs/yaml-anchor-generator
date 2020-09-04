@@ -59,7 +59,7 @@ p:
 """
 
 
-def test_dumps():
+def test_dumps() -> None:
     sample_input = parse(sample_input_raw)
     sample_output = parse(sample_output_raw)
     assert sample_input == sample_output

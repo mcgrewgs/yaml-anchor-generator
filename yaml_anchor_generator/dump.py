@@ -13,10 +13,11 @@ def label_name(partial_key: str) -> str:
     return f"label{k}"
 
 
-def dict_contains(parent: Dict[Any, Any], child: Dict[Any, Any]) -> bool:
-    for k in child:
-        if k not in parent:
-            return False
+def dict_contains(parent: Any, child: Any) -> bool:
+    if isinstance(parent, Dict) and isinstance(child, Dict):
+        for k in child:
+            if k not in parent:
+                return False
 
     return True
 
@@ -25,11 +26,12 @@ def same_type(a: Any, b: Any) -> bool:
     return type(a) == type(b)
 
 
-def count_overlap(parent: Dict[Any, Any], child: Dict[Any, Any]) -> int:
+def count_overlap(parent: Any, child: Any) -> int:
     overlap = 0
-    for k in child:
-        if same_type(parent[k], child[k]) and parent[k] == child[k]:
-            overlap += 1
+    if isinstance(parent, Dict) and isinstance(child, Dict):
+        for k in child:
+            if same_type(parent[k], child[k]) and parent[k] == child[k]:
+                overlap += 1
 
     return overlap
 
@@ -73,12 +75,11 @@ def yaml_map_to_string(
                         + f"<<: *{labels[best_label_index][1]}"
                     )
                     new_kv = {}
-                    for kk, vv in v.items():
-                        if (
-                            kk not in labels[best_label_index][0]
-                            or labels[best_label_index][0][kk] != vv
-                        ):
-                            new_kv[kk] = vv
+                    t = labels[best_label_index][0]
+                    if isinstance(t, Dict):
+                        for kk, vv in v.items():
+                            if kk not in t or t[kk] != vv:
+                                new_kv[kk] = vv
                     str_builder += yaml_map_to_string(
                         new_kv, labels, indent + INDENT_INC, partial_key + "_" + k
                     )
@@ -138,12 +139,11 @@ def yaml_list_to_string(
                         " " * indent
                     ) + f"- <<: *{labels[best_label_index][1]}"
                     new_kv = {}
-                    for kk, vv in v.items():
-                        if (
-                            kk not in labels[best_label_index][0]
-                            or labels[best_label_index][0][kk] != vv
-                        ):
-                            new_kv[kk] = vv
+                    t = labels[best_label_index][0]
+                    if isinstance(t, Dict):
+                        for kk, vv in v.items():
+                            if kk not in t or t[kk] != vv:
+                                new_kv[kk] = vv
                     str_builder += yaml_map_to_string(
                         new_kv, labels, indent + INDENT_INC, partial_key + "_" + str(k)
                     )
@@ -167,7 +167,7 @@ def yaml_list_to_string(
 
 def parent_to_string(
     input: YAMLValue,
-    l: List[Tuple[YAMLValue, str, int]] = [],
+    current_labels: List[Tuple[YAMLValue, str, int]] = [],
     indent: int = 0,
     partial_key: str = "",
 ) -> str:
@@ -184,38 +184,53 @@ def parent_to_string(
     elif isinstance(input, int) or isinstance(input, bool):
         return f"{input}"
     elif isinstance(input, List):
-        return yaml_list_to_string(input, l, indent, partial_key)
+        return yaml_list_to_string(input, current_labels, indent, partial_key)
     elif isinstance(input, Dict):
-        return yaml_map_to_string(input, l, indent, partial_key)
+        return yaml_map_to_string(input, current_labels, indent, partial_key)
     else:
         return ""
 
 
-def scrub_unused_labels(str_builder: str, l: List[Tuple[YAMLValue, str, int]]) -> str:
-    # i = 0
-    for v in l:
+def scrub_unused_labels(
+    str_builder: str,
+    current_labels: List[Tuple[YAMLValue, str, int]],
+    interactive: bool = False,
+) -> str:
+    for v in current_labels:
         if v[2] == 0:
             str_builder = str_builder.replace(f"&{v[1]} ", "")
-        # else:
-        #     str_builder = str_builder.replace(f"&{v[1]}", f"&{label_name(i)}")
-        #     str_builder = str_builder.replace(f"*{v[1]}", f"*{label_name(i)}")
-        #     i += 1
+        elif interactive:
+            prompt = f"The value {v[0]} was found {v[2] + 1} times in the input YAML file; what label would you like to use for it?  Provide an empty string to use the auto-generated label {v[1]}\n"
+            new_name = input(prompt)
+
+            if new_name is not None and new_name != "":
+                str_builder = str_builder.replace(f"&{v[1]}", f"&{new_name}")
+                str_builder = str_builder.replace(f"*{v[1]}", f"*{new_name}")
     str_builder = re.sub("-\\s*\n\\s*", "- ", str_builder)
     str_builder = re.sub(" +\\n", "\\n", str_builder)
     return str_builder
 
 
-def dumps(input: YAMLValue) -> str:
-    l = []
-    s = parent_to_string(input, l, 0)
-    return scrub_unused_labels(s, l)
+def dumps(input: YAMLValue, interactive: bool = False) -> str:
+    current_labels: List[Tuple[YAMLValue, str, int]] = []
+    s = parent_to_string(input, current_labels, 0)
+    return scrub_unused_labels(s, current_labels, interactive)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 2:
+        i = 1
+        interactive = False
+        if sys.argv[1] == "-i" or sys.argv[1] == "--interactive":
+            i += 1
+            interactive = True
         c = {}
-        with open(sys.argv[1], "r") as f:
+        with open(sys.argv[i], "r") as f:
             c = parse(f.read())
-        print(dumps(c).lstrip())
+        o = dumps(c, interactive).lstrip()
+        with open(sys.argv[i + 1], "w") as f:
+            f.write(o)
+        # if interactive:
+        #     print(o)
     else:
-        print("Please provide a filename as an argument!")
+        print("Please provide input and output filenames as arguments!")

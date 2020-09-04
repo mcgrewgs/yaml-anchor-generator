@@ -2,3 +2,4 @@
 .coverage
 coverage.xml
 sample_out.yml
+.vscode/.ropeproject/objectdb

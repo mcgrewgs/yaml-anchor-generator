@@ -14,6 +14,7 @@ setup:
 .PHONY: update
 update: setup
 	if [[ "$(new_hash)" != "$(old_hash)" ]]; then PIPENV_VENV_IN_PROJECT=$(PIPENV_VENV_IN_PROJECT) pipenv update --dev; echo "$(new_hash)" > pipfile_hash; fi
+	if [[ ! -s .git/hooks/pre-commit ]]; then pipenv run pre-commit install; fi
 
 .PHONY: run
 run: update
